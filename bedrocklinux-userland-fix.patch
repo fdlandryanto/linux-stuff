@@ -1,0 +1,89 @@
+From d1478133f8d811c70d819ed15523bdc9411a6617 Mon Sep 17 00:00:00 2001
+From: Fadly Andriyanto <fadlyandriyanto9@gmail.com>
+Date: Wed, 23 Jul 2025 08:04:05 +0000
+Subject: [PATCH] Fix build
+
+v2.03.22 is the last version to work with Bedrock Linux, newer version won't build due to massive update on lvm2
+Old url for libcap also no longer exists so we using kernel.googlesource.com instead
+---
+ Makefile                         | 15 ++++-----------
+ patches/lvm2/fix-device-id.patch | 31 +++++++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 11 deletions(-)
+ create mode 100644 patches/lvm2/fix-device-id.patch
+
+diff --git a/Makefile b/Makefile
+index 0ed91fe5..01aa82b7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -297,14 +297,14 @@ vendor/libcap/.success_fetching_source:
+ 	rm -rf vendor/libcap
+ 	mkdir -p vendor/libcap
+ 	git clone --depth=1 \
+-		-b `git ls-remote --tags 'https://git.kernel.org/pub/scm/libs/libcap/libcap.git/' | \
++		-b `git ls-remote --tags 'https://kernel.googlesource.com/pub/scm/linux/kernel/git/morgan/libcap.git/' | \
+ 		awk -F/ '{print $$NF}' | \
+ 		sed 's/^libcap-//g' | \
+ 		grep '^[0-9.]*$$' | \
+ 		grep '[.]' | \
+ 		sort -t . -k1,1n -k2,2n -k3,3n -k4,4n -k5,5n | \
+ 		tail -n1 | \
+-		sed 's/^/libcap-/'` 'https://git.kernel.org/pub/scm/libs/libcap/libcap.git/' \
++		sed 's/^/libcap-/'` 'https://kernel.googlesource.com/pub/scm/linux/kernel/git/morgan/libcap.git/' \
+ 		vendor/libcap
+ 	touch vendor/libcap/.success_fetching_source
+ $(COMPLETED)/libcap: vendor/libcap/.success_fetching_source $(COMPLETED)/builddir $(COMPLETED)/musl
+@@ -684,15 +684,8 @@ vendor/lvm2/.success_retrieving_source:
+ 	rm -rf vendor/lvm2/
+ 	mkdir -p vendor/lvm2
+ 	# no `--depth 1` because this repo does not support it
+-	git clone \
+-		-b `git ls-remote --tags 'https://sourceware.org/git/lvm2.git' | \
+-		awk -F/ '{print $$NF}' | \
+-		grep '^v[0-9_]*$$' | \
+-		sed 's/^v//g' | \
+-		sort -t _ -k1,1n -k2,2n -k3,3n -k4,4n -k5,5n | \
+-		tail -n1 | \
+-		sed 's/^/v/'` 'https://sourceware.org/git/lvm2.git' \
+-		vendor/lvm2
++	git clone -b v2_03_22 https://sourceware.org/git/lvm2.git vendor/lvm2
++	cd vendor/lvm2 && patch -p0 -i ../../patches/lvm2/fix-device-id.patch
+ 	cd vendor/lvm2 && patch -p0 -i ../../patches/lvm2/fix-stdio.patch
+ 	# hack to fix bad imports looking for LOCK_EX
+ 	echo '#include <sys/file.h>' >> vendor/lvm2/lib/misc/lib.h
+diff --git a/patches/lvm2/fix-device-id.patch b/patches/lvm2/fix-device-id.patch
+new file mode 100644
+index 00000000..a6faed58
+--- /dev/null
++++ b/patches/lvm2/fix-device-id.patch
+@@ -0,0 +1,31 @@
++From f98d2ffe8753895c84160a7abce4223bd127cd9e Mon Sep 17 00:00:00 2001
++From: Zdenek Kabelac <zkabelac@redhat.com>
++Date: Wed, 27 Mar 2024 00:28:14 +0100
++Subject: [PATCH] device_id: use dm_basename
++
++Avoid problems for other libc like muslc and use dm_basename.
++
++Prototype for basename has been removed from string.h from latest musl [1]
++compilers e.g. clang-18 flags the absense of prototype as error. therefore
++include libgen.h for providing it.
++
++[1] https://git.musl-libc.org/cgit/musl/commit/?id=725e17ed6dff4d0cd22487bb64470881e86a92e7
++
++Reported-by: Khem Raj <raj.khem@gmail.com>
++---
++ lib/device/device_id.c | 2 +-
++ 1 file changed, 1 insertion(+), 1 deletion(-)
++
++diff --git a/lib/device/device_id.c b/lib/device/device_id.c
++index 7d67a1cb7..200d39432 100644
++--- a/lib/device/device_id.c
+++++ b/lib/device/device_id.c
++@@ -740,7 +740,7 @@ static int _dev_read_sys_serial(struct cmd_context *cmd, struct device *dev,
++ 		int ret;
++ 
++ 		/* /dev/vda to vda */
++-		base = basename(devname);
+++		base = dm_basename(devname);
++ 
++ 		/* vda1 to vda */
++ 		for (i = 0; i < strlen(base); i++) {
