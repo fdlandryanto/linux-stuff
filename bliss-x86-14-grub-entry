@@ -1,0 +1,8 @@
+menuentry "BlissOS x86 14" {
+    insmod part_gpt
+    insmod ext2
+    set root=(hd0,1)
+
+    linux /android/kernel root=/dev/ram0 quiet SRC=/android HWC=drm_minigbm_celadon GMALLOC=minigbm FFMPEG_CODEC=1 FFMPEG_PREFER_C2=1
+    initrd /android/initrd.img
+}
