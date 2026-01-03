@@ -1,0 +1,63 @@
+From 468c4c9afd030857c1fb267d4fa5390aac231470 Mon Sep 17 00:00:00 2001
+From: Fadly Andriyanto <fadlyandriyanto9@gmail.com>
+Date: Sun, 24 Aug 2025 13:31:21 +0000
+Subject: [PATCH] mariadb: update to 11.8.3
+
+---
+ srcpkgs/mariadb/INSTALL  |  2 +-
+ srcpkgs/mariadb/template | 10 +++++-----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/srcpkgs/mariadb/INSTALL b/srcpkgs/mariadb/INSTALL
+index f66078207ff7f7..0422f257d258bb 100644
+--- a/srcpkgs/mariadb/INSTALL
++++ b/srcpkgs/mariadb/INSTALL
+@@ -6,7 +6,7 @@ post)
+ 	chmod 700 usr/lib/mysql/plugin/auth_pam_tool_dir
+ 	chown mysql usr/lib/mysql/plugin/auth_pam_tool_dir
+ 	if [ "$UPDATE" = "no" ] &&  [ ! -f var/lib/mysql/mysql-bin.index ]; then
+-		chpst -u mysql:mysql usr/bin/mysql_install_db --user=mysql --basedir=/usr \
++		chpst -u mysql:mysql usr/bin/mariadb-install-db --user=mysql --basedir=/usr \
+ 				--datadir=/var/lib/mysql --rpm --cross-bootstrap
+ 	fi
+ 	;;
+diff --git a/srcpkgs/mariadb/template b/srcpkgs/mariadb/template
+index 931d370a14ecf0..3fc2c7a61a0b88 100644
+--- a/srcpkgs/mariadb/template
++++ b/srcpkgs/mariadb/template
+@@ -1,7 +1,7 @@
+ # Template file for 'mariadb'
+ pkgname=mariadb
+-version=11.1.2
+-revision=2
++version=11.8.3
++revision=1
+ build_style=cmake
+ build_helper=qemu
+ configure_args="-DBUILD_CONFIG=mysql_release
+@@ -12,14 +12,14 @@ configure_args="-DBUILD_CONFIG=mysql_release
+  -DINSTALL_SCRIPTDIR=bin -DINSTALL_INCLUDEDIR=include/mysql
+  -DINSTALL_DOCREADMEDIR=share/mysql -DINSTALL_SUPPORTFILESDIR=share/mysql
+  -DINSTALL_MYSQLSHAREDIR=share/mysql -DINSTALL_DOCDIR=share/mysql/docs
+- -DINSTALL_SHAREDIR=share/mysql -DSTACK_DIRECTION=1
++ -DINSTALL_SHAREDIR=share/mysql -DSTACK_DIRECTION=-1
+  -DWITH_ZLIB=system -DWITH_SSL=system  -DWITH_LIBARCHIVE=system
+  -DWITH_EMBEDDED_SERVER=ON -DPLUGIN_TOKUDB=NO -DPLUGIN_BLACKHOLE=YES
+  -DPLUGIN_PARTITION=YES -DWITH_EXTRA_CHARSETS=complex -DWITH_LIBWRAP=OFF
+  -DWITH_READLINE=ON -DWITH_SYSTEMD=no -DWITH_PCRE=system"
+ hostmakedepends="bison perl flex pkg-config"
+ makedepends="ncurses-devel gnutls-devel libaio-devel boost-devel-minimal pam-devel zlib-devel
+- pcre2-devel fmt-devel"
++ pcre2-devel fmt-devel libxml2-devel"
+ depends="perl"
+ checkdepends="perl"
+ short_desc="Fast SQL database server, drop-in replacement for MySQL"
+@@ -27,7 +27,7 @@ maintainer="Orphaned <orphan@voidlinux.org>"
+ license="GPL-2.0-only"
+ homepage="https://mariadb.com"
+ distfiles="https://archive.mariadb.org/mariadb-${version}/source/mariadb-${version}.tar.gz"
+-checksum=19a9e980e57fa332931f643b48ad7390528c889ff6ea8b0e16fd306aa3088238
++checksum=1014a85c768de8f9e9c6d4bf0b42617f3b1588be1ad371f71674ea32b87119c0
+ lib32disabled=yes
+ provides="mysql-${version}_${revision}"
+ replaces="mysql>=0"
